@@ -1,6 +1,31 @@
 import React from 'react';
 
-const CabinetVisualization = ({ 
+interface Dimensions {
+  width: number;
+  height: number;
+  depth: number;
+}
+
+interface Door {
+  position: string;
+  type: 'solid' | 'mirror' | 'glass';
+}
+
+interface DoorDimensions {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+}
+
+interface CabinetVisualizationProps {
+  dimensions: Dimensions;
+  materialThickness: number;
+  shelfCount: number;
+  doors: Door[];
+}
+
+const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({ 
   dimensions = { width: 24, height: 30, depth: 12 },
   materialThickness = 0.75,
   shelfCount = 2,
@@ -37,7 +62,7 @@ const CabinetVisualization = ({
   );
 
   // Helper function to get door dimensions
-  const getDoorDimensions = (position) => {
+  const getDoorDimensions = (position: string): DoorDimensions => {
     let doorWidth = width;
     let doorHeight = height;
     let doorX = 0;
@@ -71,7 +96,7 @@ const CabinetVisualization = ({
   };
 
   // Helper function to render doors
-  const renderDoor = (door, strokeOnly = false) => {
+  const renderDoor = (door: Door, strokeOnly = false) => {
     const { width: doorWidth, height: doorHeight, x, y } = getDoorDimensions(door.position);
     const doorColor = door.type === 'mirror' ? colors.mirrorDoor : 
                      door.type === 'glass' ? colors.glassDoor : 
@@ -84,11 +109,11 @@ const CabinetVisualization = ({
         y={y}
         width={doorWidth}
         height={doorHeight}
-        fill={strokeOnly ? "none" : doorColor}
+        fill={strokeOnly ? 'none' : doorColor}
         fillOpacity={strokeOnly ? 0 : 0.3}
         stroke={doorColor}
         strokeWidth={1}
-        strokeDasharray={strokeOnly ? "4" : "0"}
+        strokeDasharray={strokeOnly ? '4' : '0'}
       />
     );
   };
@@ -157,7 +182,7 @@ const CabinetVisualization = ({
               
               {/* Dimensions */}
               <text x={width / 2} y={-5} textAnchor="middle" fontSize="12" fill={colors.dimensions}>
-                {dimensions.width}"
+                {dimensions.width}&quot;
               </text>
               <text 
                 x={-5} 
@@ -167,7 +192,7 @@ const CabinetVisualization = ({
                 fontSize="12"
                 fill={colors.dimensions}
               >
-                {dimensions.height}"
+                {dimensions.height}&quot;
               </text>
             </g>
           </svg>
@@ -202,7 +227,7 @@ const CabinetVisualization = ({
               
               {/* Dimensions */}
               <text x={depth / 2} y={-5} textAnchor="middle" fontSize="12" fill={colors.dimensions}>
-                {dimensions.depth}"
+                {dimensions.depth}&quot;
               </text>
               <text 
                 x={-5} 
@@ -212,7 +237,7 @@ const CabinetVisualization = ({
                 fontSize="12"
                 fill={colors.dimensions}
               >
-                {dimensions.height}"
+                {dimensions.height}&quot;
               </text>
             </g>
           </svg>
