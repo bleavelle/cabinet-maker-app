@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8f9fa;
+  --foreground: #2d3748;
+  --wood-grain: url("data:image/svg+xml,%3Csvg...");  /* We'll add a subtle wood grain pattern */
+}
+
+@layer base {
+  body {
+    @apply bg-gray-100;
+  }
+  
+  input[type="number"] {
+    @apply px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors;
+  }
+
+  select {
+    @apply px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors;
+  }
+}
+
+@layer components {
+  .input-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  
+  .section-card {
+    @apply bg-white rounded-xl shadow-lg p-6 border border-gray-100;
+  }
+}
