@@ -23,6 +23,12 @@ interface CabinetVisualizationProps {
   materialThickness: number;
   shelfCount: number;
   doors: Door[];
+  joinery?: {
+    sideJoint: {
+      type: 'screwed' | 'screwless';
+      depth: number;
+    };
+  };
 }
 
 const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({ 
@@ -32,7 +38,13 @@ const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({
   doors = [
     { position: 'left-half', type: 'solid' },
     { position: 'right-half', type: 'mirror' }
-  ]
+  ],
+  joinery = {
+    sideJoint: {
+      type: 'screwed',
+      depth: 0.25
+    }
+  }
 }) => {
   // Scale factor to convert inches to pixels (1 inch = 4 pixels)
   const scale = 4;
@@ -46,7 +58,8 @@ const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({
     solidDoor: '#8B4513',    // Dark brown
     mirrorDoor: '#88CCE7',   // Light blue
     glassDoor: '#AAD7D9',    // Light cyan
-    dimensions: '#666666'     // Gray
+    dimensions: '#666666',    // Gray
+    joints: '#FF8C42',       // Orange for joint highlights
   };
   
   // Calculate scaled dimensions
@@ -55,6 +68,11 @@ const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({
   const depth = dimensions.depth * scale;
   const thickness = materialThickness * scale;
   
+  // Calculate joint extension if screwless
+  const jointExtension = joinery.sideJoint.type === 'screwless' 
+    ? materialThickness * joinery.sideJoint.depth * scale
+    : 0;
+
   // Calculate shelf positions
   const shelfSpacing = height / (shelfCount + 1);
   const shelfPositions = Array.from({ length: shelfCount }, (_, i) => 
@@ -201,8 +219,43 @@ const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({
         {/* Side View */}
         <div className="flex flex-col items-center">
           <span className="text-sm font-medium mb-2">Side View</span>
-          <svg width={depth + 40} height={height + 40} className="bg-gray-50">
-            <g transform={`translate(20, 20)`}>
+          <svg width={depth + 40} height={height + 80} className="bg-gray-50">
+            <g transform={`translate(20, 40)`}>
+              {/* Joint extensions */}
+              {joinery.sideJoint.type === 'screwless' && (
+                <>
+                  {/* Top joint extension */}
+                  <rect
+                    y={-jointExtension}
+                    width={depth}
+                    height={jointExtension}
+                    fill={colors.joints}
+                    fillOpacity={0.3}
+                    stroke={colors.joints}
+                    strokeWidth={1}
+                    strokeDasharray="2"
+                  />
+                  {/* Bottom joint extension */}
+                  <rect
+                    y={height}
+                    width={depth}
+                    height={jointExtension}
+                    fill={colors.joints}
+                    fillOpacity={0.3}
+                    stroke={colors.joints}
+                    strokeWidth={1}
+                    strokeDasharray="2"
+                  />
+                  {/* Joint annotations */}
+                  <text x={depth + 5} y={-jointExtension/2} fontSize="10" fill={colors.joints}>
+                    Joint extension
+                  </text>
+                  <text x={depth + 5} y={height + jointExtension/2} fontSize="10" fill={colors.joints}>
+                    Joint extension
+                  </text>
+                </>
+              )}
+
               {/* Cabinet frame */}
               <rect 
                 width={depth} 
@@ -226,7 +279,7 @@ const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({
               ))}
               
               {/* Dimensions */}
-              <text x={depth / 2} y={-5} textAnchor="middle" fontSize="12" fill={colors.dimensions}>
+              <text x={depth / 2} y={-25} textAnchor="middle" fontSize="12" fill={colors.dimensions}>
                 {dimensions.depth}&quot;
               </text>
               <text 
@@ -239,6 +292,17 @@ const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({
               >
                 {dimensions.height}&quot;
               </text>
+              {joinery.sideJoint.type === 'screwless' && (
+                <text 
+                  x={-5} 
+                  y={height + jointExtension + 15} 
+                  textAnchor="middle" 
+                  fontSize="10"
+                  fill={colors.joints}
+                >
+                  {(jointExtension/scale).toFixed(3)}&quot;
+                </text>
+              )}
             </g>
           </svg>
         </div>
@@ -309,6 +373,12 @@ const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({
           <div className="w-4 h-4" style={{backgroundColor: colors.glassDoor, opacity: 0.3}}></div>
           <span className="text-sm">Glass Door</span>
         </div>
+        {joinery.sideJoint.type === 'screwless' && (
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4" style={{backgroundColor: colors.joints, opacity: 0.3}}></div>
+            <span className="text-sm">Joint Extensions</span>
+          </div>
+        )}
       </div>
     </div>
   );
