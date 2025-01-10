@@ -10,9 +10,22 @@ type DoorPosition = 'full' | 'left-half' | 'right-half' | 'left-1/3' | 'middle-1
 
 type DoorType = 'solid' | 'mirror' | 'glass';
 
+type SideJointType = 'screwed' | 'screwless';
+type ShelvesType = 'adjustable' | 'dado';
+type BackPanelType = 'rabbeted' | 'dado';
+
 interface Door {
   position: DoorPosition;
   type: DoorType;
+}
+
+interface Joinery {
+  sideJoint: {
+    type: SideJointType;
+    depth: number;
+  };
+  shelves: ShelvesType;
+  backPanel: BackPanelType;
 }
 
 interface CutPiece {
@@ -29,30 +42,30 @@ const CabinetMaker = () => {
     height: 30,
     depth: 12
   });
-  
+
   const [materialThickness, setMaterialThickness] = useState(0.75);
   const [shelfCount, setShelfCount] = useState(3);
-  const [joinery, setJoinery] = useState({
+  const [joinery, setJoinery] = useState<Joinery>({
     sideJoint: {
-      type: 'screwed' as const,
+      type: 'screwed',
       depth: 0.25
     },
-    shelves: 'adjustable' as const,
-    backPanel: 'rabbeted' as const
+    shelves: 'adjustable',
+    backPanel: 'rabbeted'
   });
-  
+
   const [doors, setDoors] = useState<Door[]>([
     { position: 'left-2/3', type: 'solid' },
     { position: 'right-1/3', type: 'solid' }
   ]);
 
-  const positionOptions = [
+  const positionOptions: DoorPosition[] = [
     'full', 'left-half', 'right-half',
     'left-1/3', 'middle-1/3', 'right-1/3',
     'left-2/3', 'right-2/3',
     'upper-half', 'lower-half',
     'upper-1/3', 'middle-vert-1/3', 'lower-1/3'
-  ] as const;
+  ];
 
   const addDoor = () => {
     setDoors([...doors, { position: 'full', type: 'solid' }]);
@@ -64,26 +77,22 @@ const CabinetMaker = () => {
 
   const updateDoor = (index: number, field: 'position' | 'type', value: string) => {
     const newDoors = [...doors];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    newDoors[index] = { ...newDoors[index], [field]: value as any };
+    newDoors[index] = { ...newDoors[index], [field]: value as DoorPosition | DoorType };
     setDoors(newDoors);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updateJoinery = (field: 'sideJoint', value: any) => {
-    if (field === 'sideJoint') {
-      setJoinery(prev => ({
-        ...prev,
-        sideJoint: { ...prev.sideJoint, ...value }
-      }));
-    }
+  const updateJoinery = (field: keyof Joinery, value: Partial<Joinery[typeof field]>) => {
+    setJoinery(prev => ({
+      ...prev,
+      [field]: { ...prev[field], ...value }
+    }));
   };
 
   const calculateCutList = (): CutPiece[] => {
     const jointDepth = joinery.sideJoint.type === 'screwless' 
       ? materialThickness * joinery.sideJoint.depth * 2 
       : 0;
-  
+
     const sideLengthBase = dimensions.height - materialThickness * 2;
     const sideLength = sideLengthBase + jointDepth;
   
@@ -156,7 +165,7 @@ const CabinetMaker = () => {
     ];
   };
 
-  const getDoorDimensions = (position: string) => {
+  const getDoorDimensions = (position: DoorPosition) => {
     let width = dimensions.width;
     let height = dimensions.height;
     
@@ -221,7 +230,7 @@ const CabinetMaker = () => {
             <label className="text-gray-400 text-sm font-mono">Joint</label>
             <select 
               value={joinery.sideJoint.type}
-              onChange={(e) => updateJoinery('sideJoint', { type: e.target.value })}
+              onChange={(e) => updateJoinery('sideJoint', { type: e.target.value as SideJointType })}
               className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-200"
             >
               <option value="screwed">Screwed</option>
