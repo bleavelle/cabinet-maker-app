@@ -81,11 +81,16 @@ const CabinetMaker = () => {
     setDoors(newDoors);
   };
 
-  const updateJoinery = (field: keyof Joinery, value: Partial<Joinery[typeof field]>) => {
-    setJoinery(prev => ({
-      ...prev,
-      [field]: { ...prev[field], ...value }
-    }));
+  const updateJoinery = (
+    field: keyof Joinery,  // GOOD: Uses your Joinery interface
+    value: Partial<Joinery['sideJoint']>  // GOOD: References the sideJoint type from your Joinery interface
+  ) => {
+    if (field === 'sideJoint') {
+      setJoinery(prev => ({
+        ...prev,
+        sideJoint: { ...prev.sideJoint, ...value }
+      }));
+    }
   };
 
   const calculateCutList = (): CutPiece[] => {
