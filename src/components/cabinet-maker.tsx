@@ -172,7 +172,7 @@ const CabinetMaker = () => {
     newDoors[index] = { ...newDoors[index], [field]: value as DoorType | DoorPosition };
     setDoors(newDoors);
   };
-
+  // eslint-disable-next-line
   const updateJoinery = (field: keyof JoineryConfig, value: any) => {
     if (field === 'sideJoint') {
       setJoinery(prev => ({
