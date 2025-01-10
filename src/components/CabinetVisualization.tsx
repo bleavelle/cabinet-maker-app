@@ -195,7 +195,7 @@ const CabinetVisualization: React.FC<CabinetVisualizationProps> = ({
                 />
               ))}
               
-              {/* Doors */}
+              {/* Doors yo*/}
               {doors.map((door) => renderDoor(door, true))}
               
               {/* Dimensions */}
