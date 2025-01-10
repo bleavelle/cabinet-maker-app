@@ -108,32 +108,32 @@ const CabinetMaker = () => {
       { 
         name: 'Top', 
         qty: 1, 
-        width: dimensions.width, 
-        length: dimensions.depth, 
+        length: dimensions.width, 
+        width: dimensions.depth, 
         notes: `Main cabinet top (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : 'receives side panel joints'}` 
       },
       { 
         name: 'Bottom', 
         qty: 1, 
-        width: dimensions.width, 
-        length: dimensions.depth, 
+        length: dimensions.width, 
+        width: dimensions.depth, 
         notes: `Main cabinet bottom (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : 'receives side panel joints'}` 
       },
       { 
         name: 'Left Side', 
         qty: 1, 
-        width: dimensions.depth - materialThickness, 
-        length: sideLength, 
+        length: dimensions.depth - materialThickness, 
+        width: sideLength, 
         notes: `Left side (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : jointingNotes.screwless}` 
       },
       { 
         name: 'Right Side', 
         qty: 1, 
-        width: dimensions.depth - materialThickness, 
-        length: sideLength, 
+        length: dimensions.depth - materialThickness, 
+        width: sideLength, 
         notes: `Right side (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : jointingNotes.screwless}` 
       },
-      
+
       { 
         name: 'Back Panel', 
         qty: 1, 
@@ -144,8 +144,8 @@ const CabinetMaker = () => {
       { 
         name: 'Shelf', 
         qty: shelfCount, 
-        width: dimensions.width - materialThickness * 2 - (joinery.shelves === 'adjustable' ? 0.125 : 0), 
-        length: dimensions.depth - materialThickness - 0.75, 
+        length: dimensions.width - materialThickness * 2 - (joinery.shelves === 'adjustable' ? 0.125 : 0), 
+        width: dimensions.depth - materialThickness - 0.75, 
         notes: `${materialThickness} shelves - ${jointingNotes.shelves}` 
       },
       ...doors.map(door => {
