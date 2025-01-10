@@ -87,15 +87,15 @@ const CabinetMaker = () => {
 
   const calculateCutList = (): CutPiece[] => {
     const jointDepth = joinery.sideJoint.type === 'screwless' 
-      ? materialThickness * joinery.sideJoint.depth 
+      ? materialThickness * joinery.sideJoint.depth * 2 // Account for both ends
       : 0;
   
     const sideLengthBase = dimensions.height - materialThickness * 2; // Start from reduced length
-    const sideLength = sideLengthBase + jointDepth * 2; // Add back the joint extensions if any
+    const sideLength = sideLengthBase + jointDepth; // Add back the joint extensions
   
     const jointingNotes = {
       screwed: 'cut to fit, pre-drill for screws and glue',
-      screwless: `includes ${jointDepth.toFixed(3)} extra inches on each end for joinery`,
+      screwless: `includes ${(jointDepth / 2).toFixed(3)} extra inches on each end for joinery`, // Clarify per end
       shelves: joinery.shelves === 'dado' ? 
         'for dado joint' : 
         'for shelf pins',
@@ -133,7 +133,7 @@ const CabinetMaker = () => {
         length: sideLength, 
         notes: `Right side (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : jointingNotes.screwless}` 
       },
-
+      
       { 
         name: 'Back Panel', 
         qty: 1, 
