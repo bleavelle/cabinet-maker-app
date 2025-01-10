@@ -89,7 +89,10 @@ const CabinetMaker = () => {
     const jointDepth = joinery.sideJoint.type === 'screwless' 
       ? materialThickness * joinery.sideJoint.depth 
       : 0;
-
+  
+    const sideLengthBase = dimensions.height - materialThickness * 2; // Start from reduced length
+    const sideLength = sideLengthBase + jointDepth * 2; // Add back the joint extensions if any
+  
     const jointingNotes = {
       screwed: 'cut to fit, pre-drill for screws and glue',
       screwless: `includes ${jointDepth.toFixed(3)} extra inches on each end for joinery`,
@@ -100,7 +103,7 @@ const CabinetMaker = () => {
         'with back panel rabbet' :
         'with back panel dado'
     };
-
+  
     return [
       { 
         name: 'Top', 
@@ -120,16 +123,17 @@ const CabinetMaker = () => {
         name: 'Left Side', 
         qty: 1, 
         width: dimensions.depth - materialThickness, 
-        length: dimensions.height + (jointDepth * 2), 
+        length: sideLength, 
         notes: `Left side (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : jointingNotes.screwless}` 
       },
       { 
         name: 'Right Side', 
         qty: 1, 
         width: dimensions.depth - materialThickness, 
-        length: dimensions.height + (jointDepth * 2), 
+        length: sideLength, 
         notes: `Right side (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : jointingNotes.screwless}` 
       },
+
       { 
         name: 'Back Panel', 
         qty: 1, 
