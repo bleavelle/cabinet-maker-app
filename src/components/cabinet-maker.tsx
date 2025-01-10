@@ -122,15 +122,15 @@ const CabinetMaker = () => {
       { 
         name: 'Left Side', 
         qty: 1, 
-        length: dimensions.depth - materialThickness, 
-        width: sideLength, 
+        width: dimensions.depth, 
+        length: sideLength, 
         notes: `Left side (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : jointingNotes.screwless}` 
       },
       { 
         name: 'Right Side', 
         qty: 1, 
-        length: dimensions.depth - materialThickness, 
-        width: sideLength, 
+        width: dimensions.depth, 
+        length: sideLength, 
         notes: `Right side (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : jointingNotes.screwless}` 
       },
 
@@ -144,7 +144,7 @@ const CabinetMaker = () => {
       { 
         name: 'Shelf', 
         qty: shelfCount, 
-        length: dimensions.width - materialThickness * 2 - (joinery.shelves === 'adjustable' ? 0.125 : 0), 
+        length: dimensions.width - materialThickness - (joinery.shelves === 'adjustable' ? 0.125 : 0), 
         width: dimensions.depth - materialThickness - 0.75, 
         notes: `${materialThickness} shelves - ${jointingNotes.shelves}` 
       },
