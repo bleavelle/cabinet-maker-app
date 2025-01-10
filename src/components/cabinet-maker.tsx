@@ -64,10 +64,12 @@ const CabinetMaker = () => {
 
   const updateDoor = (index: number, field: 'position' | 'type', value: string) => {
     const newDoors = [...doors];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     newDoors[index] = { ...newDoors[index], [field]: value as any };
     setDoors(newDoors);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateJoinery = (field: 'sideJoint', value: any) => {
     if (field === 'sideJoint') {
       setJoinery(prev => ({
@@ -319,10 +321,10 @@ const CabinetMaker = () => {
                   <td className="p-3 text-gray-200">{piece.name}</td>
                   <td className="p-3 text-center text-gray-200">{piece.qty}</td>
                   <td className="p-3 text-center text-gray-200">
-                    {Math.round(piece.width * 100) / 100}"
+                    {Math.round(piece.width * 100) / 100}&quot;
                   </td>
                   <td className="p-3 text-center text-gray-200">
-                    {Math.round(piece.length * 100) / 100}"
+                    {Math.round(piece.length * 100) / 100}&quot;
                   </td>
                   <td className="p-3 text-gray-200">{piece.notes}</td>
                 </tr>
