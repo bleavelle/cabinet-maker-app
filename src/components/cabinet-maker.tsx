@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { Plus, Minus } from 'lucide-react';
@@ -10,7 +10,9 @@ type DoorPosition = 'full' | 'left-half' | 'right-half' | 'left-1/3' | 'middle-1
                     'middle-vert-1/3' | 'lower-1/3';
 
 type DoorType = 'solid' | 'mirror' | 'glass';
-type JoineryType = 'dado' | 'dowel' | 'box-joint' | 'adjustable' | 'rabbeted' | 'inset' | 'screwed';
+type JoineryType = 'screwed' | 'screwless';
+type ShelfMount = 'dado' | 'adjustable';
+type BackMount = 'rabbeted' | 'inset';
 
 interface Door {
   position: DoorPosition;
@@ -18,10 +20,12 @@ interface Door {
 }
 
 interface JoineryConfig {
-  sides: JoineryType;
-  shelves: JoineryType;
-  construction: JoineryType;
-  backPanel: JoineryType;
+  sideJoint: {
+    type: JoineryType;
+    depth: number;
+  };
+  shelves: ShelfMount;
+  backPanel: BackMount;
 }
 
 interface CutPiece {
@@ -36,21 +40,23 @@ const CabinetMaker = () => {
   const [dimensions, setDimensions] = useState({
     width: 24,
     height: 30,
-    depth: 6
+    depth: 12
   });
   
   const [materialThickness, setMaterialThickness] = useState(0.75);
   const [shelfCount, setShelfCount] = useState(3);
   
   const [joinery, setJoinery] = useState<JoineryConfig>({
-    sides: 'dado',
-    shelves: 'dado',
-    construction: 'screwed',
+    sideJoint: {
+      type: 'screwed',
+      depth: 0.25
+    },
+    shelves: 'adjustable',
     backPanel: 'rabbeted'
   });
   
   const [doors, setDoors] = useState<Door[]>([
-    { position: 'left-2/3', type: 'mirror' },
+    { position: 'left-2/3', type: 'solid' },
     { position: 'right-1/3', type: 'solid' }
   ]);
 
@@ -80,20 +86,16 @@ const CabinetMaker = () => {
   };
 
   const calculateCutList = (): CutPiece[] => {
+    const jointDepth = joinery.sideJoint.type === 'screwless' 
+      ? materialThickness * joinery.sideJoint.depth 
+      : 0;
+
     const jointingNotes = {
-      sides: joinery.sides === 'dado' ? 
-        'with shelf dados' : 
-        joinery.sides === 'dowel' ? 
-        'with dowel holes marked' : 
-        'prepared for box joints',
+      screwed: 'cut to fit, pre-drill for screws and glue',
+      screwless: `includes ${jointDepth.toFixed(3)} extra inches on each end for joinery`,
       shelves: joinery.shelves === 'dado' ? 
         'for dado joint' : 
-        joinery.shelves === 'dowel' ? 
-        'for dowel mounting' :
         'for shelf pins',
-      construction: joinery.construction === 'screwed' ?
-        'pre-drill for screws' :
-        'cut box joints on ends',
       backPanel: joinery.backPanel === 'rabbeted' ?
         'with back panel rabbet' :
         'with back panel dado'
@@ -105,35 +107,35 @@ const CabinetMaker = () => {
         qty: 1, 
         width: dimensions.width, 
         length: dimensions.depth, 
-        notes: `Main cabinet top (${materialThickness}) - ${jointingNotes.construction}` 
+        notes: `Main cabinet top (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : 'receives side panel joints'}` 
       },
       { 
         name: 'Bottom', 
         qty: 1, 
         width: dimensions.width, 
         length: dimensions.depth, 
-        notes: `Main cabinet bottom (${materialThickness}) - ${jointingNotes.construction}` 
+        notes: `Main cabinet bottom (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : 'receives side panel joints'}` 
       },
       { 
         name: 'Left Side', 
         qty: 1, 
         width: dimensions.depth - materialThickness, 
-        length: dimensions.height, 
-        notes: `Left side (${materialThickness}) - ${jointingNotes.sides} - ${jointingNotes.backPanel}` 
+        length: dimensions.height + (jointDepth * 2), 
+        notes: `Left side (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : jointingNotes.screwless}` 
       },
       { 
         name: 'Right Side', 
         qty: 1, 
         width: dimensions.depth - materialThickness, 
-        length: dimensions.height, 
-        notes: `Right side (${materialThickness}) - ${jointingNotes.sides} - ${jointingNotes.backPanel}` 
+        length: dimensions.height + (jointDepth * 2), 
+        notes: `Right side (${materialThickness}) - ${joinery.sideJoint.type === 'screwed' ? jointingNotes.screwed : jointingNotes.screwless}` 
       },
       { 
         name: 'Back Panel', 
         qty: 1, 
         width: dimensions.width - (joinery.backPanel === 'rabbeted' ? materialThickness * 2 : 0), 
         length: dimensions.height - (joinery.backPanel === 'rabbeted' ? materialThickness * 2 : 0), 
-        notes: `1/4 back panel - ${joinery.backPanel === 'rabbeted' ? 'fits in rabbet' : 'fits in dado'}` 
+        notes: `1/4 back panel - ${jointingNotes.backPanel}` 
       },
       { 
         name: 'Shelf', 
@@ -167,246 +169,262 @@ const CabinetMaker = () => {
 
   const updateDoor = (index: number, field: 'position' | 'type', value: string) => {
     const newDoors = [...doors];
-    newDoors[index] = { ...newDoors[index], [field]: value as DoorType | DoorPosition };    setDoors(newDoors);
+    newDoors[index] = { ...newDoors[index], [field]: value as DoorType | DoorPosition };
+    setDoors(newDoors);
+  };
+
+  const updateJoinery = (field: keyof JoineryConfig, value: any) => {
+    if (field === 'sideJoint') {
+      setJoinery(prev => ({
+        ...prev,
+        sideJoint: {
+          ...prev.sideJoint,
+          ...value
+        }
+      }));
+    } else {
+      setJoinery(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const cutList = calculateCutList();
 
   return (
-  <div className="w-full max-w-5xl p-8 bg-white rounded-lg shadow-lg">
-
-<div className="w-full max-w-6xl p-8 mx-auto bg-white rounded-xl shadow-lg">
-  <div className="mb-12 border-b border-wood-light/20 pb-6">
-    <h1 className="text-4xl font-bold text-wood-dark">Cabinet Maker</h1>
-  </div>
-
-      <p className="mt-2 text-gray-600">Design and plan your cabinet dimensions and cuts</p>
-    </div>
-
-      {/* Dimensions Section */}
-
-      <div className="mb-12 bg-gray-50 p-8 rounded-xl shadow-sm">
-    <div className="mb-6">
-      <h2 className="text-2xl font-semibold text-wood-dark">Cabinet Dimensions</h2>
-     <p className="mt-1 text-sm text-gray-600">Enter the overall dimensions of your cabinet</p>
-     </div>
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-white p-4 rounded-md shadow-sm">
-            <label className="block mb-2 text-gray-700 font-medium">Width (inches)</label>
-            <input
-              type="number"
-              value={dimensions.width}
-              onChange={(e) => setDimensions({...dimensions, width: parseFloat(e.target.value)})}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              step="0.125"
-            />
-          </div>
-          <div className="bg-white p-4 rounded-md shadow-sm">
-            <label className="block mb-2 text-gray-700 font-medium">Height (inches)</label>
-            <input
-              type="number"
-              value={dimensions.height}
-              onChange={(e) => setDimensions({...dimensions, height: parseFloat(e.target.value)})}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              step="0.125"
-            />
-          </div>
-          <div className="bg-white p-4 rounded-md shadow-sm">
-            <label className="block mb-2 text-gray-700 font-medium">Depth (inches)</label>
-            <input
-              type="number"
-              value={dimensions.depth}
-              onChange={(e) => setDimensions({...dimensions, depth: parseFloat(e.target.value)})}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              step="0.125"
-            />
-          </div>
+    <div className="min-h-screen bg-sky-50 py-12 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-sky-900 mb-2">Cabinet Maker</h1>
+          <p className="text-lg text-sky-700">Design your custom cabinet with precise measurements</p>
         </div>
-      </div>
 
-      {/* Material & Joinery Section */}
-      <div className="mb-12 bg-gray-50 p-8 rounded-xl shadow-sm">
-  <div className="mb-6">
-    <h2 className="text-2xl font-semibold text-wood-dark">Construction Details</h2>
-    <p className="mt-1 text-sm text-gray-600">Select material thickness and joinery methods</p>
-  </div>
-        
-        {/* Material Thickness */}
-        <div className="mb-6">
-          <div className="bg-white p-4 rounded-md shadow-sm">
-            <label className="block mb-2 text-gray-700 font-medium">Material Thickness (inches)</label>
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="number"
-                value={materialThickness}
-                onChange={(e) => setMaterialThickness(parseFloat(e.target.value))}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                step="0.125"
-              />
-              <div className="flex items-center">
-                <span className="text-sm text-gray-600">
-                  Common: 3/4&quot;  (0.75), 1/2&quot;  (0.5), 1/4&quot;  (0.25)
-                </span>
+        {/* Main Content */}
+        <div className="grid gap-8 md:grid-cols-2">
+          {/* Left Column */}
+          <div className="space-y-8">
+            {/* Dimensions */}
+            <section className="bg-white rounded-xl p-6 shadow-lg">
+              <h2 className="text-2xl font-semibold text-sky-900 mb-6">Dimensions</h2>
+              <div className="grid gap-6">
+                {Object.entries(dimensions).map(([key, value]) => (
+                  <div key={key}>
+                    <label className="block text-lg text-sky-800 mb-2 capitalize">
+                      {key} (inches)
+                    </label>
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={(e) => setDimensions({...dimensions, [key]: parseFloat(e.target.value) || 0})}
+                      className="w-full p-4 text-lg border-2 border-sky-100 rounded-xl focus:ring-4 focus:ring-sky-200 focus:border-sky-500 transition-all outline-none"
+                      step="0.125"
+                    />
+                  </div>
+                ))}
               </div>
-            </div>
+            </section>
+
+            {/* Material & Joinery */}
+            <section className="bg-white rounded-xl p-6 shadow-lg">
+              <h2 className="text-2xl font-semibold text-sky-900 mb-6">Construction</h2>
+              <div className="space-y-6">
+                {/* Material Thickness */}
+                <div>
+                  <label className="block text-lg text-sky-800 mb-2">Material Thickness</label>
+                  <input
+                    type="number"
+                    value={materialThickness}
+                    onChange={(e) => setMaterialThickness(parseFloat(e.target.value) || 0)}
+                    className="w-full p-4 text-lg border-2 border-sky-100 rounded-xl focus:ring-4 focus:ring-sky-200 focus:border-sky-500 transition-all outline-none"
+                    step="0.125"
+                  />
+                  <p className="mt-2 text-sm text-sky-600">
+                    Common: 3/4 (0.75), 1/2 (0.5), 1/4 (0.25)
+                  </p>
+                </div>
+
+                {/* Side Joint Type */}
+                <div>
+                  <label className="block text-lg text-sky-800 mb-2">Side Panel Joinery</label>
+                  <select 
+                    value={joinery.sideJoint.type}
+                    onChange={(e) => updateJoinery('sideJoint', { type: e.target.value })}
+                    className="w-full p-4 text-lg border-2 border-sky-100 rounded-xl focus:ring-4 focus:ring-sky-200 focus:border-sky-500 transition-all outline-none"
+                  >
+                    <option value="screwed">Screwed and Glued</option>
+                    <option value="screwless">Screwless Joint</option>
+                  </select>
+                </div>
+
+                {/* Joint Depth - Only show if screwless selected */}
+                {joinery.sideJoint.type === 'screwless' && (
+                  <div>
+                    <label className="block text-lg text-sky-800 mb-2">Joint Depth</label>
+                    <select
+                      value={joinery.sideJoint.depth}
+                      onChange={(e) => updateJoinery('sideJoint', { depth: parseFloat(e.target.value) })}
+                      className="w-full p-4 text-lg border-2 border-sky-100 rounded-xl focus:ring-4 focus:ring-sky-200 focus:border-sky-500 transition-all outline-none"
+                    >
+                      <option value={0.25}>1/4 of material thickness</option>
+                      <option value={0.5}>1/2 of material thickness</option>
+                      <option value={0.75}>3/4 of material thickness</option>
+                      <option value={1}>Full material thickness</option>
+                    </select>
+                    <p className="mt-2 text-sm text-sky-600">
+                      This will add {(joinery.sideJoint.depth * materialThickness).toFixed(3)} inches to each end
+                    </p>
+                  </div>
+                )}
+
+                {/* Shelf Mounting */}
+                <div>
+                  <label className="block text-lg text-sky-800 mb-2">Shelf Mounting</label>
+                  <select 
+                    value={joinery.shelves}
+                    onChange={(e) => updateJoinery('shelves', e.target.value)}
+                    className="w-full p-4 text-lg border-2 border-sky-100 rounded-xl focus:ring-4 focus:ring-sky-200 focus:border-sky-500 transition-all outline-none"
+                  >
+                    <option value="dado">Fixed (Dado)</option>
+                    <option value="adjustable">Adjustable (Shelf Pins)</option>
+                  </select>
+                </div>
+
+                {/* Back Panel */}
+                <div>
+                  <label className="block text-lg text-sky-800 mb-2">Back Panel Mount</label>
+                  <select 
+                    value={joinery.backPanel}
+                    onChange={(e) => updateJoinery('backPanel', e.target.value)}
+                    className="w-full p-4 text-lg border-2 border-sky-100 rounded-xl focus:ring-4 focus:ring-sky-200 focus:border-sky-500 transition-all outline-none"
+                  >
+                    <option value="rabbeted">Rabbeted</option>
+                    <option value="inset">Inset (Dado)</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-8">
+            {/* Shelves */}
+            <section className="bg-white rounded-xl p-6 shadow-lg">
+              <h2 className="text-2xl font-semibold text-sky-900 mb-6">Shelves</h2>
+              <div className="flex items-center justify-center gap-6">
+                <button 
+                  onClick={() => setShelfCount(Math.max(0, shelfCount - 1))}
+                  className="p-4 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-700 transition-colors"
+                >
+                  <Minus className="h-6 w-6" />
+                </button>
+                <span className="text-2xl font-semibold text-sky-900 min-w-[80px] text-center">
+                  {shelfCount}
+                </span>
+                <button 
+                  onClick={() => setShelfCount(shelfCount + 1)}
+                  className="p-4 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-700 transition-colors"
+                >
+                  <Plus className="h-6 w-6" />
+                </button>
+              </div>
+            </section>
+
+            {/* Cut List */}
+            <section className="bg-white rounded-xl p-6 shadow-lg">
+              <h2 className="text-2xl font-semibold text-sky-900 mb-6">Cut List</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-sky-100">
+                      <th className="text-left p-4 text-sky-800">Piece</th>
+                      <th className="text-center p-4 text-sky-800">Qty</th>
+                      <th className="text-center p-4 text-sky-800">Width</th>
+                      <th className="text-center p-4 text-sky-800">Length</th>
+                      <th className="text-left p-4 text-sky-800">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cutList.map((piece, index) => (
+                      <tr key={index} className="border-b border-sky-50 hover:bg-sky-50">
+                        <td className="p-4 text-sky-900">{piece.name}</td>
+                        <td className="p-4 text-center text-sky-900">{piece.qty}</td>
+                        <td className="p-4 text-center text-sky-900">
+                          {Math.round(piece.width * 100) / 100}
+                        </td>
+                        <td className="p-4 text-center text-sky-900">
+                          {Math.round(piece.length * 100) / 100}
+                        </td>
+                        <td className="p-4 text-sky-900">{piece.notes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </div>
         </div>
 
-        {/* Joinery Options */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white p-4 rounded-md shadow-sm">
-            <label className="block mb-2 text-gray-700 font-medium">Side Panel Joinery</label>
-            <select 
-              value={joinery.sides}
-              onChange={(e) => setJoinery({...joinery, sides: e.target.value as JoineryType})}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="dado">Dado Joint</option>
-              <option value="dowel">Doweled</option>
-              <option value="box-joint">Box Joint</option>
-            </select>
-          </div>
-          <div className="bg-white p-4 rounded-md shadow-sm">
-            <label className="block mb-2 text-gray-700 font-medium">Shelf Mounting</label>
-            <select 
-              value={joinery.shelves}
-              onChange={(e) => setJoinery({...joinery, shelves: e.target.value as JoineryType})}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="dado">Fixed (Dado)</option>
-              <option value="dowel">Fixed (Doweled)</option>
-              <option value="adjustable">Adjustable (Shelf Pins)</option>
-            </select>
-          </div>
-          <div className="bg-white p-4 rounded-md shadow-sm">
-            <label className="block mb-2 text-gray-700 font-medium">Construction Method</label>
-            <select 
-              value={joinery.construction}
-              onChange={(e) => setJoinery({...joinery, construction: e.target.value as JoineryType})}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="screwed">Screwed & Glued</option>
-              <option value="box-joint">Box Jointed</option>
-            </select>
-          </div>
-          <div className="bg-white p-4 rounded-md shadow-sm">
-            <label className="block mb-2 text-gray-700 font-medium">Back Panel Mount</label>
-            <select 
-              value={joinery.backPanel}
-              onChange={(e) => setJoinery({...joinery, backPanel: e.target.value as JoineryType})}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="rabbeted">Rabbeted</option>
-              <option value="inset">Inset (Dado)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Shelf Configuration */}
-      <div className="mb-8 bg-gray-50 p-6 rounded-lg shadow-sm">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">Shelf Configuration</h2>
-        <div className="flex items-center gap-4 bg-white p-4 rounded-md shadow-sm">
-          <button 
-            onClick={() => setShelfCount(Math.max(0, shelfCount - 1))}
-            className="p-3 border rounded-lg hover:bg-gray-100 focus:ring-2 focus:ring-blue-500"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <span className="text-lg font-medium text-gray-700">{shelfCount} shelves</span>
-          <button 
-            onClick={() => setShelfCount(shelfCount + 1)}
-            className="p-3 border rounded-lg hover:bg-gray-100 focus:ring-2 focus:ring-blue-500"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-{/* Door Configuration */}
-<div className="mb-8 bg-gray-50 p-6 rounded-lg shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Door Configuration</h2>
-          <button 
-            onClick={addDoor}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-500"
-          >
-            <Plus className="h-4 w-4" /> Add Door
-          </button>
-        </div>
-        
-        {doors.map((door, index) => (
-          <div key={index} className="flex gap-4 items-center mb-2 p-4 bg-white rounded-md shadow-sm">
-            <select
-              value={door.position}
-              onChange={(e) => updateDoor(index, 'position', e.target.value)}
-              className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              {positionOptions.map(option => (
-                <option key={option} value={option}>
-                  {option.replace('-', ' ').replace('/', ' of ')}
-                </option>
-              ))}
-            </select>
-            
-            <select
-              value={door.type}
-              onChange={(e) => updateDoor(index, 'type', e.target.value)}
-              className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="solid">Solid Door</option>
-              <option value="mirror">Mirror Door</option>
-              <option value="glass">Glass Door</option>
-            </select>
-            
+        {/* Door Configuration */}
+        <section className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-sky-900">Doors</h2>
             <button 
-              onClick={() => removeDoor(index)}
-              className="p-3 border rounded-lg hover:bg-red-50 focus:ring-2 focus:ring-red-500"
+              onClick={addDoor}
+              className="px-6 py-3 bg-sky-500 text-white rounded-xl hover:bg-sky-600 transition-colors flex items-center gap-2"
             >
-              <Minus className="h-4 w-4" />
+              <Plus className="h-5 w-5" /> Add Door
             </button>
           </div>
-        ))}
-      </div>
+          
+          <div className="grid gap-4">
+            {doors.map((door, index) => (
+              <div key={index} className="flex gap-4 items-center p-4 bg-sky-50 rounded-xl">
+                <select
+                  value={door.position}
+                  onChange={(e) => updateDoor(index, 'position', e.target.value)}
+                  className="flex-1 p-4 text-lg border-2 border-sky-100 rounded-xl focus:ring-4 focus:ring-sky-200 focus:border-sky-500 transition-all outline-none bg-white"
+                >
+                  {positionOptions.map(option => (
+                    <option key={option} value={option}>
+                      {option.replace('-', ' ').replace('/', ' of ')}
+                    </option>
+                  ))}
+                </select>
+                
+                <select
+                  value={door.type}
+                  onChange={(e) => updateDoor(index, 'type', e.target.value)}
+                  className="flex-1 p-4 text-lg border-2 border-sky-100 rounded-xl focus:ring-4 focus:ring-sky-200 focus:border-sky-500 transition-all outline-none bg-white"
+                >
+                  <option value="solid">Solid Door</option>
+                  <option value="mirror">Mirror Door</option>
+                  <option value="glass">Glass Door</option>
+                </select>
+                
+                <button 
+                  onClick={() => removeDoor(index)}
+                  className="p-4 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 transition-colors"
+                >
+                  <Minus className="h-6 w-6" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
 
-     {/* Cut List */}
-     <div className="mb-8 bg-gray-50 p-6 rounded-lg shadow-sm">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">Cut List</h2>
-        <div className="overflow-x-auto bg-white rounded-md shadow-sm">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="p-3 border-b text-left font-semibold text-gray-700">Piece</th>
-                <th className="p-3 border-b text-center font-semibold text-gray-700">Qty</th>
-                <th className="p-3 border-b text-center font-semibold text-gray-700">Width</th>
-                <th className="p-3 border-b text-center font-semibold text-gray-700">Length</th>
-                <th className="p-3 border-b text-left font-semibold text-gray-700">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cutList.map((piece, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="p-3 border-b">{piece.name}</td>
-                  <td className="p-3 border-b text-center">{piece.qty}</td>
-                  <td className="p-3 border-b text-center">{Math.round(piece.width * 100) / 100}&quot;</td>
-                  <td className="p-3 border-b text-center">{Math.round(piece.length * 100) / 100}&quot;</td>
-                  <td className="p-3 border-b">{piece.notes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Visualization */}
-      <div className="mb-8 bg-gray-50 p-6 rounded-lg shadow-sm">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">Cabinet Visualization</h2>
-        <CabinetVisualization 
-          dimensions={dimensions}
-          materialThickness={materialThickness}
-          shelfCount={shelfCount}
-          doors={doors}
-        />
+        {/* Visualization */}
+        <section className="bg-white rounded-xl p-6 shadow-lg">
+          <h2 className="text-2xl font-semibold text-sky-900 mb-6">Visualization</h2>
+          <CabinetVisualization 
+            dimensions={dimensions}
+            materialThickness={materialThickness}
+            shelfCount={shelfCount}
+            doors={doors}
+            joinery={joinery}
+          />
+        </section>
       </div>
     </div>
   );
